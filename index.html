@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>рандонавтика</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #f00;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            line-height: 1.6;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23ff0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/></svg>'), auto;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-transform: lowercase;
+            text-shadow: 0 0 5px #f00;
+        }
+        .gps-status {
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .controls {
+            margin: 2rem 0;
+        }
+        input[type="range"] {
+            width: 80%;
+            margin: 1rem 0;
+            -webkit-appearance: none;
+            height: 2px;
+            background: #333;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #f00;
+            border-radius: 0;
+        }
+        button, select {
+            background: #000;
+            color: #f00;
+            border: 1px solid #f00;
+            padding: 0.5rem 1rem;
+            font-family: 'Courier New', monospace;
+            margin: 0.5rem 0;
+            outline: none;
+        }
+        button:hover {
+            background: #f00;
+            color: #000;
+        }
+        .footer {
+            margin-top: 3rem;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        a {
+            color: #f00;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: line-through;
+        }
+        #noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.2"/></svg>');
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div id="noise"></div>
+    <h1>рандонавтика</h1>
+    <p>статус gps: <span id="location-status">не активен</span></p>
+    
+    <div class="controls">
+        <p>радиус: <span id="radius-value">500</span> м</p>
+        <input type="range" id="radius" min="100" max="2000" step="50" value="500">
+        
+        <select id="mode">
+            <option value="murder">страх</option>
+            <option value="suicide">никто не знает</option>
+            <option value="paranormal">паранормал</option>
+        </select>
+        
+        <button onclick="generateLocation()">сканировать</button>
+    </div>
+    
+    <div class="footer">
+        <a href="https://hellkyxx.t.me" target="_blank">by hellkyxx with fear</a>
+    </div>
+
+    <script>
+        let userCoords = null;
+        const gpsStatus = document.getElementById('location-status');
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userCoords = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                gpsStatus.textContent = "активен";
+                gpsStatus.onclick = () => window.open("dark.html?lat=" + userCoords.lat + "&lng=" + userCoords.lng, "_blank");
+            },
+            (error) => {
+                gpsStatus.textContent = "отказано";
+            }
+        );
+
+        document.getElementById('radius').addEventListener('input', function() {
+            document.getElementById('radius-value').textContent = this.value;
+        });
+
+        function generateLocation() {
+            if (!userCoords) {
+                alert("gps не активен.");
+                return;
+            }
+
+            const radius = parseInt(document.getElementById('radius').value) / 111320;
+            const angle = Math.random() * 2 * Math.PI;
+            const distance = Math.random() * radius;
+            const newLat = userCoords.lat + distance * Math.cos(angle);
+            const newLng = userCoords.lng + distance * Math.sin(angle);
+
+            window.open(`https://www.google.com/maps?q=${newLat},${newLng}`, '_blank');
+        }
+    </script>
+</body>
+</html>

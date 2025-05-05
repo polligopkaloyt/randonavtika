@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>./THREAT_DETECTED</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #f00;
+            margin: 0;
+            padding: 1rem;
+            line-height: 1.6;
+            overflow-x: hidden;
+            text-shadow: 0 0 3px #f00;
+        }
+        h1 {
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            text-transform: lowercase;
+            border-bottom: 1px solid #f00;
+            padding-bottom: 0.5rem;
+        }
+        .crime-item {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-left: 2px solid #f00;
+            cursor: pointer;
+        }
+        .crime-item:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+        .distance {
+            color: #0f0;
+        }
+        #console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #000;
+            border-top: 1px solid #f00;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+        }
+        #noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.2"/></svg>');
+            pointer-events: none;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div id="noise"></div>
+    <h1>./THREAT_DETECTED/NEAR_YOU</h1>
+    
+    <div id="crime-list"></div>
+    
+    <div id="console">
+        > сканирование завершено | угроз: <span id="threat-count">0</span>
+    </div>
+
+    <script>
+        // Параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userLat = parseFloat(urlParams.get('lat'));
+        const userLng = parseFloat(urlParams.get('lng'));
+
+        // Функция расчёта расстояния (в метрах)
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return (R * c * 1000).toFixed(0); // в метрах
+        }
+
+        // База данных угроз (генерируем случайные точки в радиусе 100м–2км)
+        const generateRandomThreats = () => {
+            const threats = [];
+            const threatTypes = [
+                "убийство", "нападение", "исчезновение", 
+                "призрак", "кровь", "демоническая активность",
+                "расчленение", "ритуальное убийство", "самоубийство", "жуткий пожар, было сожжено 3 ребенка и 3 взрослых человека, личности не опознаны", "серийный душитель, на этом месте умирало много людей от удушья", "отравленные продукты, возле кафе было много смертей", "смертельные иглы, в автобусе раскидывали иголки от шприцов", "ядовитый газ, в квартире обнаружили труп умерший от удушья, признаков взлома замка не было", "проклятая запись, все кто посмотрели запись, умирали через 3 дня на этом месте", "голос в голове, жертва написала до суицида «мне так сказал голос в голове»", "кукловод, конечности трупа были смотаны черной ниткой, вместо глаз пуговицы", "безымянные звонки, за 24 часа до смерти были пустые звонки", "часы наоборот, у жертвы часы были отмотаны на 3:15", "костолом, все кости жертвы были сломаны", "кислотный сон, человек просыпались с ожогами и скончался по пути в больницу"
+            ];
+            
+            for (let i = 0; i < 15; i++) {
+                // Случайное смещение (100м–2км)
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 100 + Math.random() * 1900; // 100м–2000м
+                const distanceDeg = distance / 111320; // в градусах
+                
+                threats.push({
+                    lat: userLat + distanceDeg * Math.cos(angle),
+                    lng: userLng + distanceDeg * Math.sin(angle),
+                    type: threatTypes[Math.floor(Math.random() * threatTypes.length)],
+                    year: 2015 + Math.floor(Math.random() * 9),
+                    desc: [
+                        "следы крови на стене",
+                        "последний звонок в 3:15",
+                        "неизвестное вещество",
+                        "странные символы",
+                        "исчез без вести",
+                        "найдены останки",
+                        "свидетели молчат",
+                        "полиция скрывает",
+                        "аномалия"
+                    ][Math.floor(Math.random() * 8)]
+                });
+            }
+            return threats;
+        };
+
+        // Генерация списка угроз
+        function generateThreatsList() {
+            const list = document.getElementById('crime-list');
+            let html = '';
+            const threats = generateRandomThreats();
+            let threatCount = 0;
+
+            threats.forEach((threat) => {
+                const distance = getDistance(userLat, userLng, threat.lat, threat.lng);
+                
+                if (distance <= 2000) { // Только угрозы в радиусе 2км
+                    html += `
+                        <div class="crime-item" onclick="window.open('https://www.google.com/maps?q=${threat.lat},${threat.lng}', '_blank')">
+                            <strong>${threat.type.toUpperCase()} (${threat.year})</strong><br>
+                            ${threat.desc}<br>
+                            <span class="distance">${distance} м от вас</span>
+                        </div>
+                    `;
+                    threatCount++;
+                }
+            });
+
+            list.innerHTML = html || "<p>ничего не найдено. возможно, они уже в твоей комнате.</p>";
+            document.getElementById('threat-count').textContent = threatCount;
+        }
+
+        // Задержка для эффекта "сканирования"
+        setTimeout(() => {
+            generateThreatsList();
+        }, 1500);
+    </script>
+</body>
+</html>
